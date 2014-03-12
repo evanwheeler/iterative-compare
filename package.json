@@ -1,0 +1,31 @@
+{
+  "name": "iterative-compare",
+  "version": "0.1.0",
+  "description": "Compare two sorted lists via iterators",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/evanwheeler/iterative-compare.git"
+  },
+  "keywords": [
+    "compare",
+    "deferred",
+    "iterator"
+  ],
+  "author": "Evan Wheeler",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/evanwheeler/iterative-compare/issues"
+  },
+  "homepage": "https://github.com/evanwheeler/iterative-compare",
+  "dependencies": {
+    "q": "~1.0.0"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "should": "*"
+  }
+}
