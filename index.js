@@ -4,7 +4,10 @@ var Q = require( 'q' );
 var Deferred = Q.defer,
     all = Q.all,
     isPromise = Q.isPromise;
-
+   
+/**
+ * Accepts input as promise, deferred, or value and returns a promise. 
+ */ 
 function ensurePromise( obj ) { 
     if( isPromise( obj ) ) return obj;
     if( obj && obj.promise ) return obj.promise;
@@ -27,16 +30,6 @@ function callIter( iter ) {
     
     // If iter may return a promise, deferred, or value -- always return a promise.
     return ensurePromise( result );
-}
-
-/** 
- * Calls a function and defers executing by default
- * @param fn - The function to execute
- * @param sync - Run immediately if true.
- */
-function deferExec( fn, sync ) { 
-    if( sync ) fn();
-    else setTimeout( fn, 0 );
 }
 
 /**
@@ -68,7 +61,7 @@ function defaultCmp( a, b ) {
  * result of comparison was 0.
  * @param v1 - The first value (or null if there was no first value).
  * @param v2 - The second value (or null if there was no second value).
- * @param {integer} cmpResult - The result of the comparison function.
+ * @param {number} cmpResult - The result of the comparison function.
  * @returns {*} The value that will be added to the results.
  */
 function defaultExtract( v1, v2, cmpResult ) {
@@ -100,8 +93,7 @@ var IterativeCompare = module.exports = function( options ) {
 
     this.compareFn = options.compareFn || defaultCmp;
     this.extractFn = options.extractFn || defaultExtract;
-    this.recurseSync = options.recurseSync || false;
-    
+
     this._deferred = null;
 };
 
@@ -122,7 +114,6 @@ IterativeCompare.prototype = {
         this._iter1 = iter1;
         this._iter2 = iter2;
         this._results = [];
-
         this._deferred = Deferred();
 
         // start the comparison.
@@ -139,22 +130,27 @@ IterativeCompare.prototype = {
      * @private
      */
     _addResult: function( v1, v2, cmpResult ) {
+        var r;
 
         if( cmpResult === 0 && isVal(v1) && isVal(v2) ) {
             // The comparison was equal -- pass both values to extract result.
-            this._results.push( this.extractFn( v1, v2, cmpResult ) );
+            r = this.extractFn( v1, v2, cmpResult );
         }
         else if( cmpResult < 0 || nullish( v2 ) ) {
             // Item from left list was not in right list.
-            this._results.push( this.extractFn( v1, null, -1 ) );
+            r = this.extractFn( v1, null, -1 );
         }
         else if( cmpResult > 0 || nullish( v1 ) ) {
             // Item from right list was not in left list.
-            this._results.push( this.extractFn( null, v2, 1 ) );
+            r = this.extractFn( null, v2, 1 );
         }
 
-        // notify about progress.
-        this._deferred.notify( this._results );
+        if( r ) {
+            this._results.push( r );
+
+            // notify about progress.
+            this._deferred.notify( this._results );
+        }
     },
 
     /**
@@ -178,13 +174,13 @@ IterativeCompare.prototype = {
         }
         else if( isVal( val1 ) ) {
             // advance left until end.
-            this._addResult( val1, val2, null );
-            this._stepLeft();
+            this._addResult( val1, null, null );
+            this._stepLeft( null );
         }
         else if( isVal( val2 ) ) {
             // advance right until end.
-            this._addResult( val1, val2, null );
-            this._stepRight();
+            this._addResult( null, val2, null );
+            this._stepRight( null );
         }
         else {
             // both are at the end.
@@ -216,13 +212,14 @@ IterativeCompare.prototype = {
      */
     _stepLeft: function( rightVal ) {
         var self = this;
-        callIter( self._iter1 ).then( function( v ) {
-            deferExec( function() { 
+        callIter( self._iter1 )
+            .then( function( v ) {
                 self._compareValues( v, rightVal );
-            }, this.recurseSync )
-        } ).fail( function( err ) {
-            self._fail( err );
-        } );
+            } )
+            .fail( function( err ) {
+                self._fail( err );
+            } )
+            .done();
     },
 
     /**
@@ -231,13 +228,14 @@ IterativeCompare.prototype = {
      */
     _stepRight: function( leftVal ) {
         var self = this;
-        callIter( self._iter2 ).then( function( v ) {
-            deferExec( function() { 
+        callIter( self._iter2 )
+            .then( function( v ) {
                 self._compareValues( leftVal, v );
-            }, this.recurseSync );
-        } ).fail( function( err ) {
-            self._fail( err );
-        } );
+            } )
+            .fail( function( err ) {
+                self._fail( err );
+            } )
+            .done();
     },
 
     /**
@@ -247,11 +245,7 @@ IterativeCompare.prototype = {
         var self = this;
         
         all( [ callIter( this._iter1 ), callIter( this._iter2 ) ] ).done( function( results ) {
-
-            deferExec( function() { 
-                self._compareValues( results[0], results[1] );
-            }, this.recurseSync );
-        
+            self._compareValues( results[0], results[1] );
         } , function( err ) {
             self._fail( err );
         } );
@@ -275,6 +269,6 @@ IterativeCompare.prototype = {
         var d = this._deferred;
         this._deferred = null;
         d.reject( err );
-    },
+    }
 };
 

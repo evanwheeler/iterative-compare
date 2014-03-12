@@ -1,7 +1,7 @@
-var IterativeCompare = require( '..' );
-var assert = require('assert');
-var should = require('should');
-var Q = require( 'q' );
+var IterativeCompare = require( '..' ),
+    assert = require('assert'),
+    should = require('should'),
+    Q = require( 'q' );
 
 var async = function( fn ) { 
     setTimeout( fn, 0 );
@@ -93,7 +93,8 @@ describe( "IterativeCompare#compare", function() {
             } );
         } );
     } );
-    it( "should work with recurseSync true", function(done) { 
+
+    it( "should work with recurseSync true", function(done) {
         var cmp = new IterativeCompare( { recurseSync: true } );
         
         cmp.compare( promiseIter( 3 ), promiseIter( 4 ) ).then( function( result ) { 
@@ -107,6 +108,17 @@ describe( "IterativeCompare#compare", function() {
             async( function() { 
                 assert( false );
                 done();    
+            } );
+        } );
+    } );
+
+    it( "should notify deferred object with each comparison", function(done) {
+        var cmp = new IterativeCompare( { recurseSync: true } );
+
+        cmp.compare( promiseIter( 1 ), promiseIter( 1 ) ).progress( function( info ) {
+            async( function() {
+                info.should.be.exactly( { value: 0, exists: "both" } );
+                done();
             } );
         } );
     } );
