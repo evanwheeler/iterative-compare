@@ -7,6 +7,13 @@ var async = function( fn ) {
     setTimeout( fn, 0 );
 }
 
+function makeIterForList( list )  {
+    var i = 0;
+    return function() {
+        return list[i++];
+    };
+}
+
 function promiseIter(num) { 
     var r = [], j = 0, i = 0;
     while( j < num ) r.push( j++ );
@@ -94,26 +101,8 @@ describe( "IterativeCompare#compare", function() {
         } );
     } );
 
-    it( "should work with recurseSync true", function(done) {
-        var cmp = new IterativeCompare( { recurseSync: true } );
-        
-        cmp.compare( promiseIter( 3 ), promiseIter( 4 ) ).then( function( result ) { 
-            async( function() { 
-                assert( result.length == 4 );
-                result[1].exists.should.equal( 'both' );
-                result[3].exists.should.equal( 'right' );
-                done();    
-            } );
-        }, function() { 
-            async( function() { 
-                assert( false );
-                done();    
-            } );
-        } );
-    } );
-
     it( "should notify deferred object with each comparison", function(done) {
-        var cmp = new IterativeCompare( { recurseSync: true } );
+        var cmp = new IterativeCompare();
 
         cmp.compare( promiseIter( 1 ), promiseIter( 1 ) ).progress( function( info ) {
             async( function() {
@@ -125,7 +114,7 @@ describe( "IterativeCompare#compare", function() {
     } );
 
     it( "should still work if iterator returns deferred instead of promise", function(done) { 
-        var cmp = new IterativeCompare( { recurseSync: true } );
+        var cmp = new IterativeCompare();
         
         function emptyIter() {
             var d = Q.defer();
@@ -147,7 +136,7 @@ describe( "IterativeCompare#compare", function() {
     } );
 
     it( "should catch errors from iterator", function(done) { 
-        var cmp = new IterativeCompare( { recurseSync: true } );
+        var cmp = new IterativeCompare();
         
         function failIter() {
             var d = Q.defer();
@@ -166,6 +155,71 @@ describe( "IterativeCompare#compare", function() {
                 done();
             } );
         } );
-    } );    
-        
+    } );
+
+    it( 'should return correct results', function(done) {
+        var cmp = new IterativeCompare(),
+            iter1 = makeIterForList( [ 1, 11 ] ),
+            iter2 = makeIterForList( [ 2, 4, 9, 11 ] );
+
+        cmp.compare( iter1, iter2).then( function( result ) {
+
+            async( function()  {
+
+                result.length.should.equal( 5 );
+
+                result[0].should.have.property( 'exists').and.equal( 'left' );
+                result[0].should.have.property( 'value' ).and.equal( 1 );
+
+                result[1].should.have.property( 'exists').and.equal( 'right' );
+                result[1].should.have.property( 'value' ).and.equal( 2 );
+
+                result[2].should.have.property( 'exists').and.equal( 'right' );
+                result[2].should.have.property( 'value' ).and.equal( 4 );
+
+                result[3].should.have.property( 'exists').and.equal( 'right' );
+                result[3].should.have.property( 'value' ).and.equal( 9 );
+
+                result[4].should.have.property( 'exists').and.equal( 'both' );
+                result[4].should.have.property( 'value' ).and.equal( 11 );
+
+                done();
+            } );
+
+        }).done();
+    } );
+    it( 'should return correct results for strings', function(done) {
+        var cmp = new IterativeCompare(),
+            iter1 = makeIterForList( [ "Abbey", "Zara", "Zilch" ] ),
+            iter2 = makeIterForList( [ "Abbey", "Mike", "Ted", "Zara", "Zorg" ] );
+
+        cmp.compare( iter1, iter2).then( function( result ) {
+
+            async( function()  {
+
+                result.length.should.equal( 6 );
+
+                result[0].should.have.property( 'exists').and.equal( 'both' );
+                result[0].should.have.property( 'value' ).and.equal( "Abbey" );
+
+                result[1].should.have.property( 'exists').and.equal( 'right' );
+                result[1].should.have.property( 'value' ).and.equal( "Mike" );
+
+                result[2].should.have.property( 'exists').and.equal( 'right' );
+                result[2].should.have.property( 'value' ).and.equal( "Ted" );
+
+                result[3].should.have.property( 'exists').and.equal( 'both' );
+                result[3].should.have.property( 'value' ).and.equal( "Zara" );
+
+                result[4].should.have.property( 'exists').and.equal( 'left' );
+                result[4].should.have.property( 'value' ).and.equal( "Zilch" );
+
+                result[5].should.have.property( 'exists').and.equal( 'right' );
+                result[5].should.have.property( 'value' ).and.equal( "Zorg" );
+
+                done();
+            } );
+
+        }).done();
+    } );
 } );
