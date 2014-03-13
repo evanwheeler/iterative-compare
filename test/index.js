@@ -117,7 +117,8 @@ describe( "IterativeCompare#compare", function() {
 
         cmp.compare( promiseIter( 1 ), promiseIter( 1 ) ).progress( function( info ) {
             async( function() {
-                info.should.be.exactly( { value: 0, exists: "both" } );
+                info.length.should.equal( 1 );
+                info[0].should.containEql( { value: 0, exists: "both" } );
                 done();
             } );
         } );
