@@ -1,5 +1,7 @@
 # iterative-compare
 
+[![Build Status](https://travis-ci.org/evanwheeler/iterative-compare.png?branch=master)](https://travis-ci.org/evanwheeler/iterative-compare)
+
 _iterative-compare_ is a simple utility to help compare two ordered lists of data. It traverses each list by repeatedly advancing two iterators. It returns a promise which is fulfilled with the results when the comparison is complete. A comparison function can be passed to the constructor, which determines order and tests for missing items. An extraction function can be supplied to customize how the results are returned.
 
 ## To begin
