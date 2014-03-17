@@ -17,7 +17,7 @@ function ensurePromise( obj ) {
 }
     
 /**
- * Normalizes calls to different iterator interfaces. Convert returned values into promises if necessary.
+ * Normalizes calls to different iterator interfaces. Convert returned values into promise if necessary.
  * @param iter - The iterator.
  * @returns {*} A promise to be resolved to a next value.
  */
@@ -33,7 +33,7 @@ function callIter( iter ) {
 }
 
 /**
- * Returns true if v is not undefined or null.
+ * Returns true if v is undefined or null.
  */
 function nullish( v ) {
     return v === null || typeof v === 'undefined';
@@ -89,6 +89,9 @@ function defaultExtract( v1, v2, cmpResult ) {
  * @constructor
  */
 var IterativeCompare = module.exports = function( options ) {
+
+    if (!(this instanceof IterativeCompare)) return new IterativeCompare( options );
+
     options = options || {};
 
     this.compareFn = options.compareFn || defaultCmp;
@@ -160,24 +163,25 @@ IterativeCompare.prototype = {
      * @param val2 - Value from the second iterator.
      */
     _compareValues: function( val1, val2 ) {
-        var d = this._deferred;
+        var hasVal1 = isVal( val1),
+            hasVal2 = isVal( val2 );
 
-        if( isVal( val1 ) && isVal( val2 ) ) {
+        if( hasVal1 && hasVal2 ) {
             // we have two items to compare ...
             var cmp = this.compareFn( val1, val2 );
 
             // add the result.
             this._addResult( val1, val2, cmp );
 
-            // next step.
+            // increment both.
             this._step( val1, val2, cmp );
         }
-        else if( isVal( val1 ) ) {
+        else if( hasVal1 ) {
             // advance left until end.
             this._addResult( val1, null, null );
             this._stepLeft( null );
         }
-        else if( isVal( val2 ) ) {
+        else if( hasVal2 ) {
             // advance right until end.
             this._addResult( null, val2, null );
             this._stepRight( null );

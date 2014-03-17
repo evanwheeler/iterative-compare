@@ -26,8 +26,13 @@ function rawValIter(num) {
     return function() { return Q( r[i++] ); };
 };
 
-describe( "IterativeCompare(opts)", function() { 
-    it( "should have default comparison function", function() { 
+describe( "IterativeCompare(opts)", function() {
+    it( "should not require new", function() {
+        var cmp = IterativeCompare();
+        assert( cmp instanceof IterativeCompare ) ;
+    } )
+
+    it( "should have default comparison function", function() {
         var cmp = new IterativeCompare();
         assert( typeof cmp.compareFn === "function" ) ;
     } )
